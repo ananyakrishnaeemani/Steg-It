@@ -1,23 +1,38 @@
 import cv2
 import hashlib
+import numpy as np
+import random
 
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()[:16]  # 16-char hash
+def generate_key(password):
+    """Generate a hash-based key for random pixel selection."""
+    return int(hashlib.sha256(password.encode()).hexdigest(), 16) % (10**8)
 
-def encode_message(image, message, password):
-    password_hash = hash_password(password)
-    secret_data = password_hash + "þ" + message  # Include hashed password in the message
-    binary_msg = ''.join(format(ord(i), '08b') for i in secret_data)
-    binary_msg += '1111111111111110'  # End-of-message delimiter
-
-    data_index = 0
-    img = image.copy()
-    for row in img:
-        for pixel in row:
-            for i in range(3):  # Loop through R, G, B
-                if data_index < len(binary_msg):
-                    pixel[i] = (pixel[i] & 254) | int(binary_msg[data_index])  # Ensure within 0-255 range
-                    data_index += 1
-                else:
-                    return img
-    return img
+def hide_message(image, message, password):
+    """Embed a secret message in an image by modifying pixels at random positions."""
+    
+    # Generate a random seed from the password
+    seed = generate_key(password)
+    random.seed(seed)
+    
+    # Convert the message to binary
+    binary_data = ''.join(format(ord(char), '08b') for char in message)
+    binary_data += '1111111111111110'  # End marker
+    
+    # Flatten the image into a 1D list of pixel indices
+    height, width, _ = image.shape
+    total_pixels = height * width * 3  # Each pixel has 3 color channels
+    
+    if len(binary_data) > total_pixels:
+        raise ValueError("Message is too large to fit in the image.")
+    
+    # Generate random unique positions for embedding the binary data
+    indices = random.sample(range(total_pixels), len(binary_data))
+    
+    # Embed the message into the image
+    img_copy = image.copy()
+    flat_img = img_copy.flatten()
+    
+    for i, bit in enumerate(binary_data):
+        flat_img[indices[i]] = (flat_img[indices[i]] & 254) | int(bit)
+    
+    return flat_img.reshape(image.shape)
