@@ -9,31 +9,35 @@ def generate_key(password):
 
 def retrieve_message(image, password):
     """Extract the hidden message from the image using password-based random selection."""
-    
+
     # Generate the same random seed based on the password
     seed = generate_key(password)
     random.seed(seed)
-    
+
     # Flatten the image into a 1D list of pixel values
     flat_img = image.flatten()
-    
+
     # Generate random positions in the same order they were used for encryption
     total_pixels = len(flat_img)
     possible_bits = total_pixels // 3  # Maximum bits that can be stored
-    indices = random.sample(range(total_pixels), possible_bits)
-    
+    indices = list(range(total_pixels))
+    random.shuffle(indices)
+    indices = indices[:possible_bits]  # Take only the possible bits
+
     # Extract binary data
     binary_data = ''.join(str(flat_img[i] & 1) for i in indices)
-    
+
     # Find the end marker
     end_marker = '1111111111111110'
     end_position = binary_data.find(end_marker)
-    
+
     if end_position != -1:
         binary_data = binary_data[:end_position]
-    
+    else:
+        print("Warning: End marker not found. Extracted message might be incomplete.")
+
     # Convert binary back to text
     chars = [binary_data[i:i+8] for i in range(0, len(binary_data), 8)]
-    extracted_text = "".join(chr(int(char, 2)) for char in chars)
-    
-    return extracted_text
+    extracted_text = "".join(chr(int(char, 2)) for char in chars if len(char) == 8)
+
+    return extracted_text if extracted_text else "No message found or incorrect password."
