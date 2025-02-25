@@ -38,6 +38,15 @@ if option == "Embed Message - (Encryption)":
 elif option == "Extract Message - (Decryption)":
     st.header("🔎 Retrieve Hidden Message from Image")
 
+    with st.expander("⚠️ Pro Tip: Prevent Image Compression Issues"):
+        st.markdown("""
+        - **DO NOT send the image via WhatsApp, Telegram, or Facebook Messenger** (they compress images).
+        - **Recommended Ways to Share:**
+          - 📩 **Send via Email (as an attachment)**
+          - ☁️ **Upload to Google Drive and share the link**
+          - 🔗 **Use a USB drive or AirDrop**
+        """)
+
     encrypted_image = st.file_uploader("Upload an image with hidden text", type=["png", "jpg"])
     security_key = st.text_input("Enter the password", type="password")
 
